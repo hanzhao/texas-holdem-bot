@@ -412,17 +412,18 @@ func (t *Texas) MoveOn() error {
 func (t *Texas) NextPlayer(ignoreTimes int) error {
 	breakForBet := false
 	// Go to next one.
-	t.Round.ActorIndex = t.Round.NextValidIndex(t.Round.ActorIndex)
+	t.Round.ActorIndex = t.Round.NextIndex(t.Round.ActorIndex)
 	// ALL IN or last raiser.
 	for t.Round.ActorIndex != t.Round.LastRaiser || ignoreTimes > 0 {
 		if t.Round.ActorIndex == t.Round.LastRaiser {
 			ignoreTimes--
 		}
-		if t.Players[t.Round.ActorIndex].Chip > 0 {
+		if t.Round.UserState[t.Round.ActorIndex] == InGame &&
+			t.Players[t.Round.ActorIndex].Chip > 0 {
 			breakForBet = true
 			break
 		}
-		t.Round.ActorIndex = t.Round.NextValidIndex(t.Round.ActorIndex)
+		t.Round.ActorIndex = t.Round.NextIndex(t.Round.ActorIndex)
 	}
 	if t.Round.ActorIndex == t.Round.LastRaiser && !breakForBet {
 		t.Round.Stage += 1
@@ -572,7 +573,7 @@ func (t *Texas) Raise(userID int, amount int64) error {
 
 func (t *Texas) GetOut(userID int) error {
 	for i := 0; i < 10; i++ {
-		if t.Round != nil && t.Players[i].UserID == userID {
+		if t.Round != nil && t.Players[i] != nil && t.Players[i].UserID == userID {
 			t.Round.UserState[i] = Out
 			break
 		}
@@ -746,6 +747,15 @@ func (t *Texas) ShowStatus() error {
 		})
 		return err
 	}
+}
+
+func (r *Round) NextIndex(index int) int {
+	for i := 1; i <= 10; i++ {
+		if r.UserState[(index+i)%10] > Out {
+			return (index + i) % 10
+		}
+	}
+	panic("NextIndex runs in an empty desk.")
 }
 
 func (r *Round) NextValidIndex(index int) int {
