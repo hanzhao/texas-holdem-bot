@@ -167,6 +167,22 @@ func handleStartRound(e *Bot, id int, chat *Chat, user *User) error {
 		_, err := e.SendMessage(body)
 		return err
 	}
+	joined := false
+	for i := 0; i < 10; i++ {
+		if games[chat.ID].Players[i].UserID == user.ID {
+			joined = true
+			break
+		}
+	}
+	if !joined {
+		body := &SendMessageRequest{
+			ChatID:           chat.ID,
+			Text:             "You need to /join game at first.",
+			ReplyToMessageID: id,
+		}
+		_, err := e.SendMessage(body)
+		return err
+	}
 	err := games[chat.ID].StartRound()
 	if err != nil {
 		body := &SendMessageRequest{
