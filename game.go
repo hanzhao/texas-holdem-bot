@@ -169,7 +169,7 @@ func handleStartRound(e *Bot, id int, chat *Chat, user *User) error {
 	}
 	joined := false
 	for i := 0; i < 10; i++ {
-		if games[chat.ID].Players[i].UserID == user.ID {
+		if games[chat.ID].Players[i] != nil && games[chat.ID].Players[i].UserID == user.ID {
 			joined = true
 			break
 		}
