@@ -9,6 +9,7 @@ import (
 	"strconv"
 
 	. "github.com/magicae/telegram-bot"
+	"github.com/magicae/texas-holdem-bot/config"
 	"gopkg.in/redis.v5"
 )
 
@@ -412,7 +413,7 @@ func (t *Texas) MoveOn() error {
 func (t *Texas) NextPlayer(ignoreTimes int) error {
 	breakForBet := false
 	// Go to next one.
-	t.Round.ActorIndex = t.Round.NextIndex(t.Round.ActorIndex)
+	t.Round.ActorIndex = t.Round.NextValidIndex(t.Round.ActorIndex)
 	// ALL IN or last raiser.
 	for t.Round.ActorIndex != t.Round.LastRaiser || ignoreTimes > 0 {
 		if t.Round.ActorIndex == t.Round.LastRaiser {
@@ -423,7 +424,7 @@ func (t *Texas) NextPlayer(ignoreTimes int) error {
 			breakForBet = true
 			break
 		}
-		t.Round.ActorIndex = t.Round.NextIndex(t.Round.ActorIndex)
+		t.Round.ActorIndex = t.Round.NextValidIndex(t.Round.ActorIndex)
 	}
 	if t.Round.ActorIndex == t.Round.LastRaiser && !breakForBet {
 		t.Round.Stage += 1
@@ -519,6 +520,10 @@ func (t *Texas) Fold(userID int) error {
 	_, index := t.getMaxAndCurrentUserIndex(userID)
 	if index >= 0 {
 		t.Round.UserState[index] = Fold
+		if index == t.Round.LastRaiser {
+			// Make raiser to next one
+			t.Round.LastRaiser = t.Round.NextValidIndex(t.Round.LastRaiser)
+		}
 		if t.CountUserInGame() == 1 {
 			t.getResultForFold()
 			t.Round.Stage = End
@@ -637,6 +642,7 @@ func (t *Texas) ShowStatus() error {
 	}
 	text += "\n"
 	buttons := make([]*KeyboardButton, 0)
+	selective := true
 	if t.Round.Stage == End {
 		count := 0
 		for i := 0; i < 10; i++ {
@@ -662,11 +668,8 @@ func (t *Texas) ShowStatus() error {
 				text += "\n"
 			}
 		}
-		buttons = append(buttons, &KeyboardButton{
-			Text: "/startgame",
-		}, &KeyboardButton{
-			Text: "/getmoney",
-		})
+		buttons = config.Bot.StartButtons
+		selective = false
 	} else {
 		count := 0
 		var max int64 = 0
@@ -741,21 +744,11 @@ func (t *Texas) ShowStatus() error {
 				Keyboard:        [][]*KeyboardButton{buttons},
 				ResizeKeyboard:  true,
 				OneTimeKeyboard: true,
-				// /start should not be selective
-				Selective: len(buttons) > 2,
+				Selective:       selective,
 			},
 		})
 		return err
 	}
-}
-
-func (r *Round) NextIndex(index int) int {
-	for i := 1; i <= 10; i++ {
-		if r.UserState[(index+i)%10] > Out {
-			return (index + i) % 10
-		}
-	}
-	panic("NextIndex runs in an empty desk.")
 }
 
 func (r *Round) NextValidIndex(index int) int {
