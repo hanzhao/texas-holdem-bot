@@ -517,27 +517,31 @@ func (t *Texas) getResultForShowdown() {
 	n := len(allHands)
 	topHand := allHands[n-1].Hand
 	winnerCount := 1
+	rest := t.Round.Pot
 	for i := n - 2; i >= 0; i-- {
 		if LessThanCardSet(allHands[i].Hand, topHand) {
 			break
 		}
+		idx := allHands[i].Index
+		get := t.Round.TotalBets[idx]
+		t.Round.Earn[idx] = get
+		rest -= get
 		winnerCount += 1
 	}
-	rest := t.Round.Pot
 	for i := n - 1; i >= 0; i-- {
 		idx := allHands[i].Index
 		if LessThanCardSet(allHands[i].Hand, topHand) {
 			if rest > 0 {
 				get := min(t.Round.TotalBets[idx], rest)
 				rest -= get
-				t.Round.Earn[idx] = get
+				t.Round.Earn[idx] += get
 			} else {
 				break
 			}
 		} else {
-			get := min((t.Round.TotalBets[idx]*int64(n) + 150),
+			get := min((t.Round.TotalBets[idx] * int64(n-1)),
 				(rest / int64(winnerCount)))
-			t.Round.Earn[idx] = get
+			t.Round.Earn[idx] += get
 			rest -= get
 			winnerCount -= 1
 		}
