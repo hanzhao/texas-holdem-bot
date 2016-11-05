@@ -663,7 +663,7 @@ func (t *Texas) ShowStatus() error {
 			}
 		}
 		buttons = append(buttons, &KeyboardButton{
-			Text: "/start",
+			Text: "/startgame",
 		}, &KeyboardButton{
 			Text: "/getmoney",
 		})

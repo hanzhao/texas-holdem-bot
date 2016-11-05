@@ -85,7 +85,9 @@ func criticalTextMessageHandler(e *Bot, message *Message) {
 		if message.Chat.Type == "private" {
 			err = handlePrivateStart(e, message.MessageID, message.Chat,
 				message.From)
-		} else {
+		}
+	case "/startgame":
+		if message.Chat.Type == "group" || message.Chat.Type == "supergroup" {
 			err = handleStartRound(e, message.MessageID, message.Chat,
 				message.From)
 		}

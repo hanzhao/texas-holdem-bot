@@ -66,7 +66,7 @@ func handleJoin(e *Bot, id int, chat *Chat, user *User) error {
 	if games[chat.ID] == nil {
 		body := &SendMessageRequest{
 			ChatID:           chat.ID,
-			Text:             "You need to /start Texas Hold'em first!",
+			Text:             "You need to /startgame Texas Hold'em first!",
 			ReplyToMessageID: id,
 		}
 		_, err := e.SendMessage(body)
