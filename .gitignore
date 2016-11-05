@@ -1,1 +1,6 @@
 config/bot.go
+
+# binary
+texas-holdem-bot
+# nohup
+nohup.out
