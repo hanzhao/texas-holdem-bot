@@ -11,6 +11,8 @@ type BotConfig struct {
 	GetMoneyBase  int64
 	GetMoneyBonus int64
 	RaiseButtons  [][]*bot.KeyboardButton
+	InGameButtons []*bot.KeyboardButton
+	OutButtons    []*bot.KeyboardButton
 }
 
 var Bot *BotConfig = &BotConfig{
