@@ -37,9 +37,12 @@ var Bot *BotConfig = &BotConfig{
 			&bot.KeyboardButton{Text: "/allin"},
 		},
 	},
-	StartButtons: []*bot.KeyboardButton{
+	InGameButtons: []*bot.KeyboardButton{
 		&bot.KeyboardButton{Text: "/startgame"},
-		&bot.KeyboardButton{Text: "/getmoney"},
 		&bot.KeyboardButton{Text: "/leave"},
+	},
+	OutButtons: []*bot.KeyboardButton{
+		&bot.KeyboardButton{Text: "/join"},
+		&bot.KeyboardButton{Text: "/getmoney"},
 	},
 }

@@ -692,12 +692,21 @@ func (t *Texas) ShowStatus() error {
 					t.RemoveUser(&User{
 						ID: t.Players[i].UserID,
 					})
-					text += "**GET OUT**"
+					defer t.Bot.SendMessage(&SendMessageRequest{
+						ChatID: t.ChatID,
+						Text:   fmt.Sprintf("%s (@%s) gets out of game!", t.Players[i].DisplayName, t.Players[i].Username),
+						ReplyMarkup: &ReplyKeyboardMarkup{
+							Keyboard:        [][]*KeyboardButton{config.Bot.OutButtons},
+							ResizeKeyboard:  true,
+							OneTimeKeyboard: true,
+							Selective:       true,
+						},
+					})
 				}
 				text += "\n"
 			}
 		}
-		buttons = config.Bot.StartButtons
+		buttons = config.Bot.InGameButtons
 		selective = false
 	} else {
 		count := 0

@@ -33,6 +33,12 @@ func handleNewGame(e *Bot, id int, chat *Chat, user *User) error {
 			ChatID:           chat.ID,
 			Text:             "Texas Hold'em has already started.\n/join",
 			ReplyToMessageID: id,
+			ReplyMarkup: &ReplyKeyboardMarkup{
+				Keyboard:        [][]*KeyboardButton{config.Bot.OutButtons},
+				ResizeKeyboard:  true,
+				OneTimeKeyboard: true,
+				Selective:       true,
+			},
 		}
 		_, err := e.SendMessage(body)
 		return err
@@ -43,6 +49,7 @@ func handleNewGame(e *Bot, id int, chat *Chat, user *User) error {
 	// Add the beginner into it.
 	chip, err := games[chat.ID].AddUser(user)
 	text := ""
+	var markup *ReplyKeyboardMarkup
 	if err != nil {
 		games[chat.ID] = nil
 		text = "Failed to start a new game. " + err.Error()
@@ -50,12 +57,19 @@ func handleNewGame(e *Bot, id int, chat *Chat, user *User) error {
 		text = fmt.Sprintf("%s bought %d chips and started a new game!\n"+
 			"/join us to play Texas Hold'em together!",
 			getUserDisplayName(user), chip)
+		markup = &ReplyKeyboardMarkup{
+			Keyboard:        [][]*KeyboardButton{config.Bot.OutButtons},
+			ResizeKeyboard:  true,
+			OneTimeKeyboard: true,
+			Selective:       false,
+		}
 	}
 	// Start game success.
 	body := &SendMessageRequest{
 		ChatID:           chat.ID,
 		Text:             text,
 		ReplyToMessageID: id,
+		ReplyMarkup:      markup,
 	}
 	_, err = e.SendMessage(body)
 	return err
@@ -68,6 +82,16 @@ func handleJoin(e *Bot, id int, chat *Chat, user *User) error {
 			ChatID:           chat.ID,
 			Text:             "You need to /new game first!",
 			ReplyToMessageID: id,
+			ReplyMarkup: &ReplyKeyboardMarkup{
+				Keyboard: [][]*KeyboardButton{
+					[]*KeyboardButton{
+						&KeyboardButton{Text: "/new"},
+					},
+				},
+				ResizeKeyboard:  true,
+				OneTimeKeyboard: true,
+				Selective:       true,
+			},
 		}
 		_, err := e.SendMessage(body)
 		return err
@@ -75,17 +99,25 @@ func handleJoin(e *Bot, id int, chat *Chat, user *User) error {
 	// Join game.
 	chip, err := games[chat.ID].AddUser(user)
 	text := ""
+	var markup *ReplyKeyboardMarkup
 	if err != nil {
 		text = "Failed to join game. " + err.Error()
 	} else {
-		text = fmt.Sprintf("%s bought %d chips and joined the game!",
-			getUserDisplayName(user), chip)
+		text = fmt.Sprintf("%s (@%s) bought %d chips and joined the game!",
+			getUserDisplayName(user), user.Username, chip)
+		markup = &ReplyKeyboardMarkup{
+			Keyboard:        [][]*KeyboardButton{config.Bot.InGameButtons},
+			ResizeKeyboard:  true,
+			OneTimeKeyboard: true,
+			Selective:       true,
+		}
 	}
 	// Join game successfully.
 	body := &SendMessageRequest{
 		ChatID:           chat.ID,
 		Text:             text,
 		ReplyToMessageID: id,
+		ReplyMarkup:      markup,
 	}
 	_, err = e.SendMessage(body)
 	return err
