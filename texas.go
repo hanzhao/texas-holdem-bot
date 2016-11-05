@@ -508,7 +508,8 @@ func (t *Texas) getResultForShowdown() {
 				break
 			}
 		} else {
-			get := min(t.Round.TotalBets[idx]*int64(n), rest/int64(winnerCount))
+			get := min((t.Round.TotalBets[idx]*int64(n) + 150),
+				(rest / int64(winnerCount)))
 			t.Round.Earn[idx] = get
 			rest -= get
 			winnerCount -= 1
