@@ -689,9 +689,6 @@ func (t *Texas) ShowStatus() error {
 				}
 				text += " -> " + strconv.FormatInt(t.Players[i].Chip, 10) + " chips."
 				if t.Players[i].Chip <= 0 {
-					t.RemoveUser(&User{
-						ID: t.Players[i].UserID,
-					})
 					defer t.Bot.SendMessage(&SendMessageRequest{
 						ChatID: t.ChatID,
 						Text:   fmt.Sprintf("%s (@%s) gets out of game!", t.Players[i].DisplayName, t.Players[i].Username),
@@ -701,6 +698,9 @@ func (t *Texas) ShowStatus() error {
 							OneTimeKeyboard: true,
 							Selective:       true,
 						},
+					})
+					t.RemoveUser(&User{
+						ID: t.Players[i].UserID,
 					})
 				}
 				text += "\n"
