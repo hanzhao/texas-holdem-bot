@@ -516,9 +516,9 @@ func (t *Texas) getResultForShowdown() {
 	sort.Sort(allHands)
 	n := len(allHands)
 	topHand := allHands[n-1].Hand
-	winnerCount := 1
+	winnerCount := 0
 	rest := t.Round.Pot
-	for i := n - 2; i >= 0; i-- {
+	for i := n - 1; i >= 0; i-- {
 		if LessThanCardSet(allHands[i].Hand, topHand) {
 			break
 		}
