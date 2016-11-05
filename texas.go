@@ -72,19 +72,20 @@ type (
 	}
 
 	Round struct {
-		Pot            int64
-		Dealer         int
-		Stage          int
-		CardDealer     *TexasDealer
-		CommunityCards [5]*PokerCard
-		UserState      [10]int
-		PlayerCards    [10][2]*PokerCard
-		TopCards       [10]CardSet
-		TotalBets      [10]int64
-		StageBets      [10]int64
-		Earn           [10]int64
-		ActorIndex     int
-		LastRaiser     int
+		Pot                   int64
+		Dealer                int
+		Stage                 int
+		CardDealer            *TexasDealer
+		CommunityCards        [5]*PokerCard
+		UserState             [10]int
+		PlayerCards           [10][2]*PokerCard
+		TopCards              [10]CardSet
+		TotalBets             [10]int64
+		StageBets             [10]int64
+		Earn                  [10]int64
+		ActorIndex            int
+		LastRaiser            int
+		IgnoreLastRaiserCheck bool
 	}
 
 	PlayerHand struct {
@@ -218,6 +219,17 @@ func (t *Texas) CountUserInGame() int {
 	count := 0
 	for i := 0; i < 10; i++ {
 		if t.Players[i] != nil && t.Round.UserState[i] == InGame {
+			count++
+		}
+	}
+	return count
+}
+
+// Count actable players
+func (t *Texas) CountUserActable() int {
+	count := 0
+	for i := 0; i < 10; i++ {
+		if t.Players[i] != nil && t.Round.UserState[i] == InGame && t.Players[i].Chip > 0 {
 			count++
 		}
 	}
@@ -369,7 +381,8 @@ func (t *Texas) MoveOn() error {
 		t.Round.LastRaiser = t.Round.NextValidIndex(t.Round.Dealer)
 		t.Round.ActorIndex = t.Round.Dealer
 		t.SendMaxHand(t.Round.Stage)
-		return t.NextPlayer(1)
+		t.Round.IgnoreLastRaiserCheck = true
+		return t.NextPlayer()
 	case Turn:
 		for i := 0; i < 10; i++ {
 			t.Round.StageBets[i] = 0
@@ -384,7 +397,8 @@ func (t *Texas) MoveOn() error {
 		t.Round.LastRaiser = t.Round.NextValidIndex(t.Round.Dealer)
 		t.Round.ActorIndex = t.Round.Dealer
 		t.SendMaxHand(t.Round.Stage)
-		return t.NextPlayer(1)
+		t.Round.IgnoreLastRaiserCheck = true
+		return t.NextPlayer()
 	case River:
 		for i := 0; i < 10; i++ {
 			t.Round.StageBets[i] = 0
@@ -399,7 +413,8 @@ func (t *Texas) MoveOn() error {
 		t.Round.LastRaiser = t.Round.NextValidIndex(t.Round.Dealer)
 		t.Round.ActorIndex = t.Round.Dealer
 		t.SendMaxHand(t.Round.Stage)
-		return t.NextPlayer(1)
+		t.Round.IgnoreLastRaiserCheck = true
+		return t.NextPlayer()
 	case Showdown:
 		t.Showdown()
 		t.Round.Stage = End
@@ -410,14 +425,14 @@ func (t *Texas) MoveOn() error {
 	return nil
 }
 
-func (t *Texas) NextPlayer(ignoreTimes int) error {
+func (t *Texas) NextPlayer() error {
 	breakForBet := false
 	// Go to next one.
 	t.Round.ActorIndex = t.Round.NextValidIndex(t.Round.ActorIndex)
 	// ALL IN or last raiser.
-	for t.Round.ActorIndex != t.Round.LastRaiser || ignoreTimes > 0 {
+	for t.Round.ActorIndex != t.Round.LastRaiser || t.Round.IgnoreLastRaiserCheck {
 		if t.Round.ActorIndex == t.Round.LastRaiser {
-			ignoreTimes--
+			t.Round.IgnoreLastRaiserCheck = false
 		}
 		if t.Round.UserState[t.Round.ActorIndex] == InGame &&
 			t.Players[t.Round.ActorIndex].Chip > 0 {
@@ -426,7 +441,8 @@ func (t *Texas) NextPlayer(ignoreTimes int) error {
 		}
 		t.Round.ActorIndex = t.Round.NextValidIndex(t.Round.ActorIndex)
 	}
-	if t.Round.ActorIndex == t.Round.LastRaiser && !breakForBet {
+	if (t.Round.ActorIndex == t.Round.LastRaiser && !breakForBet) ||
+		t.CountUserActable() <= 1 {
 		t.Round.Stage += 1
 		return t.MoveOn()
 	} else {
@@ -524,13 +540,14 @@ func (t *Texas) Fold(userID int) error {
 		if index == t.Round.LastRaiser {
 			// Make raiser to next one
 			t.Round.LastRaiser = t.Round.NextValidIndex(t.Round.LastRaiser)
+			t.Round.IgnoreLastRaiserCheck = true
 		}
 		if t.CountUserInGame() == 1 {
 			t.getResultForFold()
 			t.Round.Stage = End
 			return t.MoveOn()
 		}
-		return t.NextPlayer(0)
+		return t.NextPlayer()
 	}
 	return nil
 }
@@ -542,7 +559,7 @@ func (t *Texas) Call(userID int) error {
 			return errors.New("You can only /check, /raise or /fold.")
 		}
 		t.MakeBet(index, (max - t.Round.StageBets[index]))
-		return t.NextPlayer(0)
+		return t.NextPlayer()
 	}
 	return nil
 }
@@ -551,7 +568,7 @@ func (t *Texas) Check(userID int) error {
 	max, index := t.getMaxAndCurrentUserIndex(userID)
 	if index >= 0 {
 		if max <= t.Round.StageBets[index] {
-			return t.NextPlayer(0)
+			return t.NextPlayer()
 		} else {
 			return errors.New("You can only /call, /raise or /fold.")
 		}
@@ -571,7 +588,7 @@ func (t *Texas) Raise(userID int, amount int64) error {
 		} else {
 			t.MakeBet(index, delta)
 			t.Round.LastRaiser = index
-			return t.NextPlayer(0)
+			return t.NextPlayer()
 		}
 	}
 	return nil
@@ -595,7 +612,7 @@ func (t *Texas) AllIn(userID int) error {
 		if all > max {
 			t.Round.LastRaiser = index
 		}
-		return t.NextPlayer(0)
+		return t.NextPlayer()
 	}
 	return nil
 }
