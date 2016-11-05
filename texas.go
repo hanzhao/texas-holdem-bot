@@ -441,13 +441,24 @@ func (t *Texas) NextPlayer() error {
 		}
 		t.Round.ActorIndex = t.Round.NextValidIndex(t.Round.ActorIndex)
 	}
+	max := t.getMaxBet()
 	if (t.Round.ActorIndex == t.Round.LastRaiser && !breakForBet) ||
-		t.CountUserActable() <= 1 {
+		(t.Round.StageBets[t.Round.ActorIndex] >= max && t.CountUserActable() <= 1) {
 		t.Round.Stage += 1
 		return t.MoveOn()
 	} else {
 		return t.ShowStatus()
 	}
+}
+
+func (t *Texas) getMaxBet() int64 {
+	var max int64 = 0
+	for i := 0; i < 10; i++ {
+		if t.Round.StageBets[i] > max {
+			max = t.Round.StageBets[i]
+		}
+	}
+	return max
 }
 
 func (t *Texas) getMaxAndCurrentUserIndex(userID int) (int64, int) {
