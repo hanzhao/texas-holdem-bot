@@ -684,7 +684,7 @@ func (t *Texas) ShowStatus() error {
 				text += fmt.Sprintf("[%d] %s", count, t.Players[i].DisplayName)
 				if t.Round.UserState[i] == Fold {
 					text += " FOLD"
-				} else if t.Round.Earn[i]-t.Round.TotalBets[i] > 0 {
+				} else if t.Round.Earn[i]-t.Round.TotalBets[i] >= 0 {
 					text += " WIN +" + strconv.FormatInt(t.Round.Earn[i]-t.Round.TotalBets[i], 10)
 					t.Players[i].Chip += t.Round.Earn[i]
 				} else {
