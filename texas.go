@@ -562,7 +562,11 @@ func (t *Texas) Fold(userID int) error {
 			t.Round.Stage = End
 			return t.MoveOn()
 		}
-		return t.NextPlayer()
+		if index == t.Round.ActorIndex {
+			return t.NextPlayer()
+		} else {
+			return t.ShowStatus()
+		}
 	}
 	return nil
 }
