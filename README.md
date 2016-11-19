@@ -1,6 +1,8 @@
 Texas Hold'em Telegram Bot
 ===
 
+Telegram: [@texas-holdem-robot](https://telegram.me/texas_holdem_robot)
+
 # Dependencies
 
 + Go 1.7
